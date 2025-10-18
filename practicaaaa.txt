@@ -1,77 +1,124 @@
-================================================================================
-GUÍA DE COMANDOS COMPLETA: PRÁCTICA 3
-CONEXIÓN SSH Y AUTENTICACIÓN POR CLAVES (HOST Windows -> VM Linux)
-================================================================================
+PRACTICA 1
 
-### I. CONFIGURACIÓN Y SOLUCIÓN DE PROBLEMAS DEL CLIENTE SSH
+Configurar el menú de GRUB para que el tiempo de espera sea de 20 segundos:
 
-# Título del mandato: Verificar la conectividad de red (Host Windows)
-# (Host: Windows PowerShell)
+# Editar el archivo de configuración de GRUB
+sudo nano /etc/default/grub
+
+# Buscar la línea:
+GRUB_TIMEOUT=5
+
+# Cambiarla por:
+GRUB_TIMEOUT=20
+
+# Guardar cambios y actualizar GRUB
+sudo update-grub
+
+# Mostrar el resultado:
+grep GRUB_TIMEOUT /etc/default/grub
+
+Resultado esperado:
+GRUB_TIMEOUT=20
+
+---
+
+Método de recuperación si olvidé la contraseña del usuario root:
+
+# En el menú de GRUB:
+1. Seleccionar la opción avanzada de arranque.
+2. Elegir "Recovery mode" y entrar en modo root shell.
+3. Montar el sistema en modo lectura/escritura:
+   mount -o remount,rw /
+4. Cambiar la contraseña del root:
+   passwd root
+5. Ingresar la nueva contraseña y reiniciar:
+   reboot
+
+PRACTICA 2
+
+
+Script para hacer backup con TAR de la carpeta /home/jose:
+
+# Crear el script
+nano backup_home.sh
+
+# Contenido del script:
+#!/bin/bash
+FECHA=$(date +"%d-%m-%Y_%H-%M")
+tar -czvf /home/jose/backup_$FECHA.tar.gz /home/jose
+echo "Backup completado: /home/jose/backup_$FECHA.tar.gz"
+
+# Darle permisos de ejecución
+chmod +x backup_home.sh
+
+# Ejecutar el script
+./backup_home.sh
+
+---
+
+Script que copie el resultado de ifconfig al escritorio:
+
+nano guardar_ifconfig.sh
+
+# Contenido del script:
+#!/bin/bash
+read -p "Ingrese el nombre del archivo: " nombre
+ifconfig > /home/jose/Escritorio/${nombre}.txt
+echo "Archivo creado en el Escritorio con el nombre: ${nombre}.txt"
+
+# Dar permisos y ejecutar
+chmod +x guardar_ifconfig.sh
+./guardar_ifconfig.sh
+
+PRACTICA 3
+
+
+Configurar VM en modo Bridge:
+- En VirtualBox / VMware, cambiar el adaptador de red a "Bridge Adapter".
+- Guardar cambios y reiniciar la máquina virtual.
+
+# Validar conexión desde Windows:
+En el CMD de Windows:
 ping 10.0.0.193
 
-# Título del mandato: Instalar el Cliente OpenSSH (Host Windows)
-# ESTE COMANDO DEBE EJECUTARSE EN WINDOWS POWERSHELL COMO ADMINISTRADOR para evitar el error de "elevación".
-Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
+Resultado esperado:
+Respuestas exitosas con tiempo en ms.
 
-# Título del mandato: Reiniciar la terminal (Requisito)
-# ACCIÓN: CERRAR la ventana de PowerShell de Administrador y ABRIR una nueva ventana de PowerShell normal.
+---
 
---------------------------------------------------------------------------------
+Habilitar servicio SSH en ParrotOS:
 
-### II. PRUEBA DE CONEXIÓN CON CONTRASEÑA
+sudo systemctl enable ssh
+sudo systemctl start ssh
+sudo systemctl status ssh
 
-# Título del mandato: Conectarse a la VM por SSH (Host Windows)
-# (Host: Windows PowerShell)
+# Probar conexión desde Windows:
 ssh jose@10.0.0.193
 
-# Título del mandato: Aceptar la clave de host
-# ACCIÓN: Cuando el sistema pregunte "¿Are you sure you want to continue connecting (yes/no/[fingerprint])?", escribir:
-yes
+---
 
-# Título del mandato: Introducir la contraseña
-# ACCIÓN: Cuando el sistema solicite "jose@10.0.0.193's password:", ingresar la contraseña del usuario jose en la VM.
+Generar par de llaves SSH en Windows:
 
---------------------------------------------------------------------------------
+En PowerShell o CMD:
+ssh-keygen
 
-### III. GENERACIÓN Y COPIA DE LLAVES SSH (Host Windows)
+# Dejar vacío el passphrase y elegir destino, por ejemplo:
+C:\\Users\\tu_usuario\\.ssh\\id_rsa
 
-# Título del mandato: Generar el par de llaves (Pública/Privada)
-# (Host: Windows PowerShell)
-# NOTA: Para el Paraphrase, simplemente presionar [Enter] dos veces.
-ssh-keygen -t rsa
+---
 
-# Título del mandato: Mostrar llave pública para copiar su contenido
-# (Host: Windows PowerShell)
-cat $HOME/.ssh/id_rsa.pub
+Copiar la llave pública al servidor ParrotOS:
 
-# Título del mandato: Conexión para instalar la llave (Usando la contraseña por última vez)
-# (Host: Windows PowerShell)
+scp C:\\Users\\tu_usuario\\.ssh\\id_rsa.pub jose@10.0.0.193:/home/jose/.ssh/authorized_keys
+
+O desde Windows PowerShell:
+type $env:USERPROFILE\\.ssh\\id_rsa.pub | ssh jose@10.0.0.193 "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
+
+---
+
+Probar conexión sin contraseña:
+
 ssh jose@10.0.0.193
 
-# Título del mandato: Crear el directorio .ssh (Dentro de la VM)
-# (VM: ParrotTerminal/Bash)
-mkdir -p ~/.ssh
-
-# Título del mandato: Copiar la llave pública al archivo authorized_keys (Dentro de la VM)
-# NOTA: En el siguiente comando, debes PEGAR el contenido completo de la llave que obtuviste con 'cat $HOME/.ssh/id_rsa.pub'.
-# (VM: ParrotTerminal/Bash)
-echo "ssh-rsa AAAA...(el resto de tu llave pública)..." >> ~/.ssh/authorized_keys
-
-# Título del mandato: Establecer los permisos de seguridad (Dentro de la VM)
-# (VM: ParrotTerminal/Bash)
-chmod 600 ~/.ssh/authorized_keys
-
-# Título del mandato: Cerrar la sesión de la VM
-# (VM: ParrotTerminal/Bash)
-exit
-
---------------------------------------------------------------------------------
-
-### IV. PRUEBA FINAL DE AUTENTICACIÓN POR CLAVES
-
-# Título del mandato: Probar conexión automática SSH (Host Windows)
-# ACCIÓN: CERRAR Y ABRIR UNA NUEVA VENTANA DE POWERSHELL.
-# (Host: Windows PowerShell)
-ssh jose@10.0.0.193
-
-# Resultado esperado: Conexión exitosa a la VM sin solicitar contraseña ni passphrase.
+# Resultado esperado:
+Acceso directo al sistema sin solicitar credenciales.
