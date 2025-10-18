@@ -1,0 +1,77 @@
+================================================================================
+GUÍA DE COMANDOS COMPLETA: PRÁCTICA 3
+CONEXIÓN SSH Y AUTENTICACIÓN POR CLAVES (HOST Windows -> VM Linux)
+================================================================================
+
+### I. CONFIGURACIÓN Y SOLUCIÓN DE PROBLEMAS DEL CLIENTE SSH
+
+# Título del mandato: Verificar la conectividad de red (Host Windows)
+# (Host: Windows PowerShell)
+ping 10.0.0.193
+
+# Título del mandato: Instalar el Cliente OpenSSH (Host Windows)
+# ESTE COMANDO DEBE EJECUTARSE EN WINDOWS POWERSHELL COMO ADMINISTRADOR para evitar el error de "elevación".
+Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
+
+# Título del mandato: Reiniciar la terminal (Requisito)
+# ACCIÓN: CERRAR la ventana de PowerShell de Administrador y ABRIR una nueva ventana de PowerShell normal.
+
+--------------------------------------------------------------------------------
+
+### II. PRUEBA DE CONEXIÓN CON CONTRASEÑA
+
+# Título del mandato: Conectarse a la VM por SSH (Host Windows)
+# (Host: Windows PowerShell)
+ssh jose@10.0.0.193
+
+# Título del mandato: Aceptar la clave de host
+# ACCIÓN: Cuando el sistema pregunte "¿Are you sure you want to continue connecting (yes/no/[fingerprint])?", escribir:
+yes
+
+# Título del mandato: Introducir la contraseña
+# ACCIÓN: Cuando el sistema solicite "jose@10.0.0.193's password:", ingresar la contraseña del usuario jose en la VM.
+
+--------------------------------------------------------------------------------
+
+### III. GENERACIÓN Y COPIA DE LLAVES SSH (Host Windows)
+
+# Título del mandato: Generar el par de llaves (Pública/Privada)
+# (Host: Windows PowerShell)
+# NOTA: Para el Paraphrase, simplemente presionar [Enter] dos veces.
+ssh-keygen -t rsa
+
+# Título del mandato: Mostrar llave pública para copiar su contenido
+# (Host: Windows PowerShell)
+cat $HOME/.ssh/id_rsa.pub
+
+# Título del mandato: Conexión para instalar la llave (Usando la contraseña por última vez)
+# (Host: Windows PowerShell)
+ssh jose@10.0.0.193
+
+# Título del mandato: Crear el directorio .ssh (Dentro de la VM)
+# (VM: ParrotTerminal/Bash)
+mkdir -p ~/.ssh
+
+# Título del mandato: Copiar la llave pública al archivo authorized_keys (Dentro de la VM)
+# NOTA: En el siguiente comando, debes PEGAR el contenido completo de la llave que obtuviste con 'cat $HOME/.ssh/id_rsa.pub'.
+# (VM: ParrotTerminal/Bash)
+echo "ssh-rsa AAAA...(el resto de tu llave pública)..." >> ~/.ssh/authorized_keys
+
+# Título del mandato: Establecer los permisos de seguridad (Dentro de la VM)
+# (VM: ParrotTerminal/Bash)
+chmod 600 ~/.ssh/authorized_keys
+
+# Título del mandato: Cerrar la sesión de la VM
+# (VM: ParrotTerminal/Bash)
+exit
+
+--------------------------------------------------------------------------------
+
+### IV. PRUEBA FINAL DE AUTENTICACIÓN POR CLAVES
+
+# Título del mandato: Probar conexión automática SSH (Host Windows)
+# ACCIÓN: CERRAR Y ABRIR UNA NUEVA VENTANA DE POWERSHELL.
+# (Host: Windows PowerShell)
+ssh jose@10.0.0.193
+
+# Resultado esperado: Conexión exitosa a la VM sin solicitar contraseña ni passphrase.
